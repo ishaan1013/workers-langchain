@@ -1,29 +1,135 @@
+"use client"
+
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import * as z from "zod"
+
+import { Button } from "@/components/ui/button"
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
 import axios from "axios"
 
-export default async function Home() {
-  const test = {
-    data: {
-      location: "\nMaldives",
-      itinerary:
-        "\n\nDay 1:\nArrive in Male, the capital of the Maldives. Spend the day exploring the city and its attractions, such as the Grand Friday Mosque, the National Museum, and the Sultan Park.\n\nDay 2:\nTake a day trip to the nearby island of Hulhumale. Spend the day relaxing on the beach, snorkeling, and exploring the local shops and restaurants.\n\nDay 3:\nTake a boat tour of the nearby atolls. Enjoy the stunning views of the crystal clear waters and the abundance of marine life.\n\nDay 4:\nSpend the day at a resort on one of the many islands. Enjoy the luxurious amenities, such as a spa, swimming pool, and private beach.\n\nDay 5:\nTake a day trip to the nearby island of Maafushi. Explore the local culture and cuisine, and take a tour of the island.\n\nDay 6:\nTake a boat tour of the nearby islands. Enjoy the stunning views of the crystal clear waters and the abundance of marine life.\n\nDay 7:\nSpend the day relaxing on the beach and exploring the local shops and restaurants. Enjoy the stunning views of the crystal clear waters and the abundance of marine life",
-      result: {
-        output:
-          "The current flight price from Toronto, ON to Maldives is approximately C$ 1472.",
-      },
+const formSchema = z.object({
+  fromLocation: z.string().min(1).max(50),
+  description: z.string().min(10).max(50),
+  openai: z.string().nonempty(),
+  serp: z.string().nonempty(),
+})
+
+export default function Home() {
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      fromLocation: "",
+      description: "",
+      openai: "",
+      serp: "",
     },
+  })
+
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    // console.log(values)
+    const { fromLocation, description, openai, serp } = values
+
+    const data = await axios.post("/api/worker", {
+      fromLocation,
+      description,
+      openai,
+      serp,
+    })
+
+    console.log(data.data)
   }
 
-  console.log(test.data)
-
   return (
-    <main className="flex min-h-screen items-center justify-center p-8">
-      <div className="z-10 w-full max-w-screen-md items-center space-y-8 justify-start flex flex-col">
-        <div className="whitespace-pre-line text-xs">{test.data.location}</div>
-        <div className="whitespace-pre-line text-xs">{test.data.itinerary}</div>
-        <div className="whitespace-pre-line text-xs">
-          {test.data.result.output}
-        </div>
-      </div>
-    </main>
+    <div className="w-full">
+      <h1 className="sm:text-3xl text-2xl mt-4 mb-8 font-semibold">
+        AI Agent Travel Assistant
+      </h1>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 mt-4">
+          <FormField
+            control={form.control}
+            name="fromLocation"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Where are you travelling from?</FormLabel>
+                <FormControl>
+                  <Input placeholder="e.g. Toronto, ON" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="description"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Trip Description</FormLabel>
+                <FormControl>
+                  <Input placeholder="I want to go to..." {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="openai"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>OpenAI Key</FormLabel>
+                <FormControl>
+                  <Input placeholder="Your API key" {...field} />
+                </FormControl>
+                <FormDescription>
+                  Creat an OpenAI account, then find your key at{" "}
+                  <a
+                    href="https://platform.openai.com/account/api-keys"
+                    target="_blank"
+                  >
+                    <Button variant="link" className="p-0 ml-0.5 text-xs">
+                      https://platform.openai.com/account/api-keys
+                    </Button>
+                  </a>
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="serp"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>SerpApi Key</FormLabel>
+                <FormControl>
+                  <Input placeholder="Your API key" {...field} />
+                </FormControl>
+                <FormDescription>
+                  Creat a SerpApi account, then find your key at{" "}
+                  <a href="https://serpapi.com/manage-api-key" target="_blank">
+                    <Button variant="link" className="p-0 ml-0.5 text-xs">
+                      https://serpapi.com/manage-api-key
+                    </Button>
+                  </a>
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <Button type="submit">Submit</Button>
+        </form>
+      </Form>
+    </div>
   )
 }
