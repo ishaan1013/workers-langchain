@@ -25,6 +25,7 @@ export interface Env {
 }
 
 const bodySchema = z.object({
+	fromLocation: z.string(),
 	description: z.string(),
 	openai: z.string(),
 	serp: z.string(),
@@ -32,22 +33,17 @@ const bodySchema = z.object({
 
 export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
-		// if (request.method !== 'POST') {
-		// 	return new Response('Method not allowed', { status: 405 });
-		// }
+		if (request.method !== 'POST') {
+			return new Response('Method not allowed', { status: 405 });
+		}
 
-		// const body = await request.json();
+		const body = await request.json();
 
-		// const parsed = bodySchema.safeParse(body);
-		// if (!parsed.success) {
-		// 	return new Response('Invalid body', { status: 400 });
-		// }
-		// const { description, openai, serp } = parsed.data;
-
-		const fromLocation = 'New York City';
-
-		const openai = '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';
-		const serp = '9a520a51aafa69ebf94a5ffb55cd523c334dd6e190e4446e0b2ab4ef278ca245';
+		const parsed = bodySchema.safeParse(body);
+		if (!parsed.success) {
+			return new Response('Invalid body', { status: 400 });
+		}
+		const { fromLocation, description, openai, serp } = parsed.data;
 
 		const model = new OpenAI({ temperature: 0, openAIApiKey: openai });
 		const chat = new ChatOpenAI({
@@ -95,7 +91,7 @@ export default {
 			verbose: true,
 		});
 		const chainExecutionResult = await overallChain.call({
-			description: 'I want to go to a beach in the Caribbean with white sand and excellent snorkeling.',
+			description,
 		});
 
 		const tools = [
@@ -115,6 +111,6 @@ export default {
 			input: `What is the current flight price from ${fromLocation} to ${chainExecutionResult.location}? Do not return additional explanations or anything.`,
 		});
 
-		return new Response(JSON.stringify({ ...chainExecutionResult, result }));
+		return new Response(JSON.stringify({ ...chainExecutionResult, flight: result.output }));
 	},
 };
