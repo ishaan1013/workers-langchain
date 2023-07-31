@@ -1,6 +1,10 @@
 import { SequentialChain, LLMChain } from 'langchain/chains';
 import { OpenAI } from 'langchain/llms/openai';
+import { ChatOpenAI } from 'langchain/chat_models/openai';
 import { PromptTemplate } from 'langchain/prompts';
+import { initializeAgentExecutorWithOptions } from 'langchain/agents';
+import { SerpAPI } from 'langchain/tools';
+import { Calculator } from 'langchain/tools/calculator';
 import { z } from 'zod';
 
 export interface Env {
@@ -22,7 +26,8 @@ export interface Env {
 
 const bodySchema = z.object({
 	description: z.string(),
-	key: z.string(),
+	openai: z.string(),
+	serp: z.string(),
 });
 
 export default {
@@ -37,17 +42,27 @@ export default {
 		// if (!parsed.success) {
 		// 	return new Response('Invalid body', { status: 400 });
 		// }
-		// const { description, key } = parsed.data;
+		// const { description, openai, serp } = parsed.data;
 
-		const model = new OpenAI({ temperature: 0, openAIApiKey: key });
+		const fromLocation = 'New York City';
+
+		const openai = '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';
+		const serp = '9a520a51aafa69ebf94a5ffb55cd523c334dd6e190e4446e0b2ab4ef278ca245';
+
+		const model = new OpenAI({ temperature: 0, openAIApiKey: openai });
+		const chat = new ChatOpenAI({
+			temperature: 0,
+			modelName: 'gpt-3.5-turbo-0613',
+			openAIApiKey: openai,
+		});
 
 		const template = `You are an expert travel planning agent. Given a description of a client's desired vacation, it is your job to provide them with exactly one ideal location in the world to visit.
 
-    Return only the location, without an explanation or anything else.
+		Return only the location, without an explanation or anything else.
 
-    Here is a description of a client's desired vacation:
-    {description}
-    `;
+		Here is a description of a client's desired vacation:
+		{description}
+		`;
 		const promptTemplate = new PromptTemplate({
 			template,
 			inputVariables: ['description'],
@@ -61,8 +76,8 @@ export default {
 		// This is an LLMChain to write a review of a play given a synopsis.
 		const itineraryTemplate = `You are an expert travel planning agent. Given the location of a client's desired vacation, it is your job to provide them with an itinerary for one week.
 
-    Here is the location of your client's vacation:
-    {location}`;
+		Here is the location of your client's vacation:
+		{location}`;
 		const itineraryPromptTemplate = new PromptTemplate({
 			template: itineraryTemplate,
 			inputVariables: ['location'],
@@ -76,7 +91,6 @@ export default {
 		const overallChain = new SequentialChain({
 			chains: [locationChain, itineraryChain],
 			inputVariables: ['description'],
-			// Here we return multiple variables
 			outputVariables: ['location', 'itinerary'],
 			verbose: true,
 		});
@@ -84,6 +98,23 @@ export default {
 			description: 'I want to go to a beach in the Caribbean with white sand and excellent snorkeling.',
 		});
 
-		return new Response(JSON.stringify(chainExecutionResult));
+		const tools = [
+			new SerpAPI(serp, {
+				hl: 'en',
+				gl: 'us',
+			}),
+			new Calculator(),
+		];
+
+		const executor = await initializeAgentExecutorWithOptions(tools, chat, {
+			agentType: 'openai-functions',
+			verbose: true,
+		});
+
+		const result = await executor.call({
+			input: `What is the current flight price from ${fromLocation} to ${chainExecutionResult.location}? Do not return additional explanations or anything.`,
+		});
+
+		return new Response(JSON.stringify({ ...chainExecutionResult, result }));
 	},
 };
