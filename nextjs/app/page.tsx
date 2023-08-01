@@ -1,9 +1,13 @@
 "use client"
 
+import { useState } from "react"
+
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
+import axios from "axios"
 
+import { ArrowRightIcon } from "@radix-ui/react-icons"
 import { Button } from "@/components/ui/button"
 import {
   Form,
@@ -15,10 +19,7 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import axios from "axios"
-import { ArrowRightIcon, DotsHorizontalIcon } from "@radix-ui/react-icons"
 import { Separator } from "@/components/ui/separator"
-import { useState } from "react"
 import {
   Card,
   CardContent,
@@ -26,6 +27,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { useToast } from "@/components/ui/use-toast"
+
 import { formatItinerary } from "@/lib/utils"
 
 const formSchema = z.object({
@@ -53,21 +56,33 @@ export default function Home() {
   } | null>(null)
   const [loading, setLoading] = useState(false)
 
+  const { toast } = useToast()
+
   async function onSubmit(values: z.infer<typeof formSchema>) {
     // console.log(values)
     const { fromLocation, description, openai, serp } = values
     setLoading(true)
 
-    const data = await axios.post("/api/worker", {
-      fromLocation,
-      description,
-      openai,
-      serp,
-    })
+    try {
+      const data = await axios.post("/api/worker", {
+        fromLocation,
+        description,
+        openai,
+        serp,
+      })
+      setData(data.data)
+      form.reset()
+    } catch (e) {
+      toast({
+        variant: "destructive",
+        title: "Uh oh! Something went wrong.",
+        description:
+          "There was a problem with the request. Maybe check your API keys?",
+      })
+      console.log(e)
+    }
 
-    form.reset()
     setLoading(false)
-    setData(data.data)
   }
 
   return (
@@ -78,9 +93,14 @@ export default function Home() {
       <div className="text-muted-foreground">
         Built with Next.js 13, Cloudflare Workers, OpenAI Function Calling,
         Langchain Agents, and Cloudflare Pages. Check it out on{" "}
-        <Button className=" p-0 h-auto text-base" variant="link">
-          GitHub
-        </Button>
+        <a
+          href="https://github.com/ishaan1013/workers-langchain"
+          target="_blank"
+        >
+          <Button className=" p-0 h-auto text-base" variant="link">
+            GitHub
+          </Button>
+        </a>
         .
       </div>
       <Separator className="my-8" />
