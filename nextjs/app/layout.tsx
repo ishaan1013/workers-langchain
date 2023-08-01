@@ -11,7 +11,7 @@ const inter = Inter({ subsets: ["latin"] })
 export const metadata: Metadata = {
   title: "CF Workers + Langchain",
   description:
-    "Built with Next.js 13, Cloudflare Workers, OpenAI Function Calling, Langchain Agents, and Cloudflare Pages.",
+    "Built with Next.js 13 on the edge, Cloudflare Workers & Pages, OpenAI Function Calling, and Langchain.",
 }
 
 export default function RootLayout({

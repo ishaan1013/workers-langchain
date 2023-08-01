@@ -93,8 +93,8 @@ export default function Home() {
         AI Agent Travel Assistant
       </h1>
       <div className="text-muted-foreground">
-        Built with Next.js 13, Cloudflare Workers, OpenAI Function Calling,
-        Langchain Agents, and Cloudflare Pages. Check it out on{" "}
+        Built with Next.js 13 on the edge, Cloudflare Workers &amp; Pages,
+        OpenAI Function Calling, and Langchain. Check it out on{" "}
         <a
           href="https://github.com/ishaan1013/workers-langchain"
           target="_blank"
