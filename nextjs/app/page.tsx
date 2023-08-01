@@ -30,6 +30,7 @@ import { useToast } from "@/components/ui/use-toast"
 
 import { formatItinerary } from "@/lib/utils"
 import { formSchema } from "@/lib/formSchema"
+import { resSchema } from "@/lib/resSchema"
 
 type DataType = {
   location: string
@@ -69,8 +70,9 @@ export default function Home() {
         }),
       })
       const data = await res.json()
-      console.log(data)
-      setData(data)
+
+      const parsed = resSchema.parse(data)
+      setData(parsed)
       form.reset()
     } catch (e) {
       toast({
@@ -79,7 +81,7 @@ export default function Home() {
         description:
           "There was a problem with the request. Maybe check your API keys?",
       })
-      console.log(e)
+      // console.log(e)
     }
 
     setLoading(false)
@@ -110,9 +112,11 @@ export default function Home() {
             <CardTitle>Your trip to {data.location}</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-muted-foreground text-sm whitespace-pre-line">
-              {formatItinerary(data.itinerary).substring(2)}
-            </div>
+            {data.itinerary ? (
+              <div className="text-muted-foreground text-sm whitespace-pre-line">
+                {formatItinerary(data.itinerary).substring(2)}
+              </div>
+            ) : null}
           </CardContent>
           <Separator />
           <CardFooter className="pt-6">
