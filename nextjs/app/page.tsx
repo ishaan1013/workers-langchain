@@ -16,10 +16,21 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import axios from "axios"
+import { ArrowRightIcon, DotsHorizontalIcon } from "@radix-ui/react-icons"
+import { Separator } from "@/components/ui/separator"
+import { useState } from "react"
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import { formatItinerary } from "@/lib/utils"
 
 const formSchema = z.object({
   fromLocation: z.string().min(1).max(50),
-  description: z.string().min(10).max(50),
+  description: z.string().min(10).max(200),
   openai: z.string().nonempty(),
   serp: z.string().nonempty(),
 })
@@ -35,9 +46,17 @@ export default function Home() {
     },
   })
 
+  const [data, setData] = useState<{
+    location: string
+    itinerary: string
+    flight: string
+  } | null>(null)
+  const [loading, setLoading] = useState(false)
+
   async function onSubmit(values: z.infer<typeof formSchema>) {
     // console.log(values)
     const { fromLocation, description, openai, serp } = values
+    setLoading(true)
 
     const data = await axios.post("/api/worker", {
       fromLocation,
@@ -46,16 +65,48 @@ export default function Home() {
       serp,
     })
 
-    console.log(data.data)
+    form.reset()
+    setLoading(false)
+    setData(data.data)
   }
 
   return (
-    <div className="w-full">
-      <h1 className="sm:text-3xl text-2xl mt-4 mb-8 font-semibold">
+    <div className="w-full mt-8">
+      <h1 className="md:text-4xl sm:text-3xl text-2xl mb-4 font-semibold">
         AI Agent Travel Assistant
       </h1>
+      <div className="text-muted-foreground">
+        Built with Next.js 13, Cloudflare Workers, OpenAI Function Calling,
+        Langchain Agents, and Cloudflare Pages. Check it out on{" "}
+        <Button className=" p-0 h-auto text-base" variant="link">
+          GitHub
+        </Button>
+        .
+      </div>
+      <Separator className="my-8" />
+      {data ? (
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>Your trip to {data.location}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-muted-foreground text-sm whitespace-pre-line">
+              {formatItinerary(data.itinerary).substring(2)}
+            </div>
+          </CardContent>
+          <Separator />
+          <CardFooter className="pt-6">
+            <div className="text-muted-foreground text-sm font-semibold whitespace-pre-line">
+              {data.flight}
+            </div>
+          </CardFooter>
+        </Card>
+      ) : null}
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 mt-4">
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="space-y-4 mt-4 mb-24"
+        >
           <FormField
             control={form.control}
             name="fromLocation"
@@ -74,7 +125,7 @@ export default function Home() {
             name="description"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Trip Description</FormLabel>
+                <FormLabel>Describe your ideal trip:</FormLabel>
                 <FormControl>
                   <Input placeholder="I want to go to..." {...field} />
                 </FormControl>
@@ -82,52 +133,67 @@ export default function Home() {
               </FormItem>
             )}
           />
-          <FormField
-            control={form.control}
-            name="openai"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>OpenAI Key</FormLabel>
-                <FormControl>
-                  <Input placeholder="Your API key" {...field} />
-                </FormControl>
-                <FormDescription>
-                  Creat an OpenAI account, then find your key at{" "}
-                  <a
-                    href="https://platform.openai.com/account/api-keys"
-                    target="_blank"
-                  >
-                    <Button variant="link" className="p-0 ml-0.5 text-xs">
-                      https://platform.openai.com/account/api-keys
-                    </Button>
-                  </a>
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="serp"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>SerpApi Key</FormLabel>
-                <FormControl>
-                  <Input placeholder="Your API key" {...field} />
-                </FormControl>
-                <FormDescription>
-                  Creat a SerpApi account, then find your key at{" "}
-                  <a href="https://serpapi.com/manage-api-key" target="_blank">
-                    <Button variant="link" className="p-0 ml-0.5 text-xs">
-                      https://serpapi.com/manage-api-key
-                    </Button>
-                  </a>
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <Button type="submit">Submit</Button>
+          <div className="pb-4 flex w-full sm:flex-row flex-col sm:space-y-0 space-y-4 sm:space-x-4 items-start">
+            <FormField
+              control={form.control}
+              name="openai"
+              render={({ field }) => (
+                <FormItem className="w-full sm:w-1/2">
+                  <FormLabel>OpenAI key:</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Your API key" {...field} />
+                  </FormControl>
+                  <FormDescription>
+                    Create an OpenAI account, then find your key at{" "}
+                    <a
+                      href="https://platform.openai.com/account/api-keys"
+                      target="_blank"
+                    >
+                      <Button
+                        variant="link"
+                        className="p-0 ml-0.5 text-xs h-auto"
+                      >
+                        https://platform.openai.com/account/api-keys
+                      </Button>
+                    </a>
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="serp"
+              render={({ field }) => (
+                <FormItem className="w-full sm:w-1/2">
+                  <FormLabel>SerpApi key:</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Your API key" {...field} />
+                  </FormControl>
+                  <FormDescription>
+                    Create a SerpApi account, then find your key at{" "}
+                    <a
+                      href="https://serpapi.com/manage-api-key"
+                      target="_blank"
+                    >
+                      <Button
+                        variant="link"
+                        className="p-0 ml-0.5 text-xs h-auto"
+                      >
+                        https://serpapi.com/manage-api-key
+                      </Button>
+                    </a>
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          <Button disabled={loading} type="submit" size="lg">
+            {loading ? "Generating the plans..." : "Create travel plans"}
+            {loading ? null : <ArrowRightIcon className="w-4 h-4 ml-3" />}
+          </Button>
         </form>
       </Form>
     </div>
