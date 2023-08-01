@@ -5,7 +5,6 @@ import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import axios from "axios"
 
 import { ArrowRightIcon } from "@radix-ui/react-icons"
 import { Button } from "@/components/ui/button"
@@ -30,13 +29,13 @@ import {
 import { useToast } from "@/components/ui/use-toast"
 
 import { formatItinerary } from "@/lib/utils"
+import { formSchema } from "@/lib/formSchema"
 
-const formSchema = z.object({
-  fromLocation: z.string().min(1).max(50),
-  description: z.string().min(10).max(200),
-  openai: z.string().nonempty(),
-  serp: z.string().nonempty(),
-})
+type DataType = {
+  location: string
+  itinerary: string
+  flight: string
+} | null
 
 export default function Home() {
   const form = useForm<z.infer<typeof formSchema>>({
@@ -49,11 +48,7 @@ export default function Home() {
     },
   })
 
-  const [data, setData] = useState<{
-    location: string
-    itinerary: string
-    flight: string
-  } | null>(null)
+  const [data, setData] = useState<DataType>(null)
   const [loading, setLoading] = useState(false)
 
   const { toast } = useToast()
@@ -64,13 +59,18 @@ export default function Home() {
     setLoading(true)
 
     try {
-      const data = await axios.post("/api/worker", {
-        fromLocation,
-        description,
-        openai,
-        serp,
+      const res = await fetch("/api/worker", {
+        method: "POST",
+        body: JSON.stringify({
+          fromLocation,
+          description,
+          openai,
+          serp,
+        }),
       })
-      setData(data.data)
+      const data = await res.json()
+      console.log(data)
+      setData(data)
       form.reset()
     } catch (e) {
       toast({
