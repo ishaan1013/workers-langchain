@@ -7,22 +7,7 @@ import { SerpAPI } from 'langchain/tools';
 import { Calculator } from 'langchain/tools/calculator';
 import { z } from 'zod';
 
-export interface Env {
-	// Example binding to KV. Learn more at https://developers.cloudflare.com/workers/runtime-apis/kv/
-	// MY_KV_NAMESPACE: KVNamespace;
-	//
-	// Example binding to Durable Object. Learn more at https://developers.cloudflare.com/workers/runtime-apis/durable-objects/
-	// MY_DURABLE_OBJECT: DurableObjectNamespace;
-	//
-	// Example binding to R2. Learn more at https://developers.cloudflare.com/workers/runtime-apis/r2/
-	// MY_BUCKET: R2Bucket;
-	//
-	// Example binding to a Service. Learn more at https://developers.cloudflare.com/workers/runtime-apis/service-bindings/
-	// MY_SERVICE: Fetcher;
-	//
-	// Example binding to a Queue. Learn more at https://developers.cloudflare.com/queues/javascript-apis/
-	// MY_QUEUE: Queue;
-}
+export interface Env {}
 
 const bodySchema = z.object({
 	fromLocation: z.string(),
@@ -69,7 +54,6 @@ export default {
 			outputKey: 'location',
 		});
 
-		// This is an LLMChain to write a review of a play given a synopsis.
 		const itineraryTemplate = `You are an expert travel planning agent. Given the location of a client's desired vacation, it is your job to provide them with an itinerary for one week.
 
 		Here is the location of your client's vacation:
